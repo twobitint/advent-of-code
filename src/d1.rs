@@ -1,9 +1,10 @@
-use std::fs;
 
-pub fn solve() {
+pub fn solve() -> i32 {
 
-    let contents = fs::read_to_string("./src/day1/input.txt").expect("Input failure");
-    let cals = contents.split("\n").map(|a| a.trim());
+    let contents = include_str!("../input/01");
+
+    // This map is me being lazy.
+    let lines = contents.lines();
 
     let mut most_1 = 0;
     let mut most_2 = 0;
@@ -11,9 +12,9 @@ pub fn solve() {
 
     let mut sum = 0;
 
-    for cal in cals {
+    for line in lines {
 
-        if cal.len() == 0 {
+        if line.is_empty() {
             if sum > most_1 {
                 most_3 = most_2;
                 most_2 = most_1;
@@ -26,11 +27,11 @@ pub fn solve() {
             }
             sum = 0;
         } else {
-            sum += cal.parse::<i32>().expect("Input data is not an integer");
+            sum += line.parse::<i32>().unwrap();
         }
 
     }
 
     let total = most_1 + most_2 + most_3;
-    println!("{total}");
+    return total;
 }
