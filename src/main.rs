@@ -1,3 +1,5 @@
+mod day1;
+
 fn main() {
-    println!("Happy Holidays!");
+    day1::solve();
 }
