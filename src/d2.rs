@@ -15,8 +15,9 @@ pub fn solve(input: &str) -> (u16, u16) {
         let mut score1 = b;
         if b == a {
             score1 += (DRAW - 1) * 3;
-        }
-        if (b == 1 && a == 3) || (b == 2 && a == 1) || (b == 3 && a == 2) {
+        } else if (b == ROCK && a == SCISSORS)
+               || (b == PAPER && a == ROCK)
+               || (b == SCISSORS && a == PAPER) {
             score1 += (WIN - 1) * 3;
         }
 
