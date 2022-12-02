@@ -38,7 +38,7 @@ pub fn solve(input: &str) -> (u16, u16) {
 // Decode elf cypher into RPS values.
 fn decode(line: &str) -> (u8, u8) {
     let encoded = line.as_bytes();
-    let theirs = encoded[0] - 64;
-    let mine = encoded[2] - 87;
-    return (theirs, mine);
+    let a = encoded[0] - 64;
+    let b = encoded[2] - 87;
+    return (a, b);
 }
