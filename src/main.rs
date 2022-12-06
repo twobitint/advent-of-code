@@ -1,10 +1,10 @@
-mod d4;
+mod d5;
 
 fn main() {
 
-    let input = include_str!("../input/04");
+    let input = include_str!("../input/05");
     let now = std::time::Instant::now();
-    let (p1, p2) = d4::solve(input);
+    let (p1, p2) = d5::solve(input);
 
     println!("Solution Part1:\t{}", p1);
     println!("Solution Part2:\t{}", p2);
