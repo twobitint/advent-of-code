@@ -3,7 +3,6 @@ use scan_fmt::scan_fmt;
 use std::collections::HashMap;
 
 pub fn solve(input: &str) -> (String, String) {
-
     let (stacks, procedure) = input.split_once("\n\n").unwrap();
 
     let mut s1 = stacks_from_input(stacks);
@@ -39,7 +38,6 @@ impl Reorder for HashMap<usize, Vec<char>> {
 }
 
 fn stacks_from_input(input: &str) -> HashMap<usize, Vec<char>> {
-
     let mut stacks: HashMap<usize, Vec<char>> = HashMap::new();
 
     for line in input.lines().rev() {
