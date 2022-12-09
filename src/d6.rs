@@ -5,17 +5,13 @@ pub fn solve(input: &str) -> (u16, u16) {
 }
 
 fn marker(input: &str, size: usize) -> u16 {
-    let mut map: HashSet<char> = HashSet::new();
+    let mut hash: HashSet<char> = HashSet::new();
     let buf: Vec<char> = input.chars().collect();
     let mut iter = 0;
     
-    while map.len() < size {
-        if !map.contains(&buf[iter]) {
-            map.insert(buf[iter]);
-            iter += 1;
-        } else {
-            map.clear();
-        }
+    while hash.len() < size {
+        hash.insert(buf[iter]);
+        iter += 1;
     }
 
     return iter as u16;

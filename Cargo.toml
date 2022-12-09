@@ -8,6 +8,7 @@ http = "0.2.8"
 itertools = "0.10.5"
 regex = "1.7.0"
 scan_fmt = "0.2.6"
+substring = "1.4.5"
 
 
 # Enable a small amount of optimization in debug mode
