@@ -1,9 +1,9 @@
-mod d9;
+mod d12;
 
 fn main() {
-    let input = include_str!("../input/09_test");
+    let input = include_str!("../input/12");
     let now = std::time::Instant::now();
-    let (p1, p2) = d9::solve(input);
+    let (p1, p2) = d12::solve(input);
     let elapsed = now.elapsed();
 
     println!("Solution Part1:\t{}", p1);
