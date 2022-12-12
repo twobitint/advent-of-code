@@ -1,12 +1,19 @@
 mod d12;
+use d12 as day;
 
 fn main() {
-    let input = include_str!("../input/12");
+
+    let input = day::input();
     let now = std::time::Instant::now();
-    let (p1, p2) = d12::solve(input);
+    let (p1, p2) = day::solve(input);
     let elapsed = now.elapsed();
 
     println!("Solution Part1:\t{}", p1);
     println!("Solution Part2:\t{}", p2);
     println!("Elapsed:\t{:.2?}", elapsed);
+}
+
+#[test]
+fn test() {
+    day::test();
 }
