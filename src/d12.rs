@@ -6,11 +6,14 @@ const START_ELEVATION: char = 'a';
 const END: char = 'E';
 const END_ELEVATION: char = 'z';
 
+// Solve the problem!
 pub fn solve(input: &str) -> (usize, usize) {
     let map = Map::from(input);
     (map.path(true), map.path(false))
 }
 
+// Our custom indexable map which will store location
+// and elevation data for finding a shortest path.
 struct Map {
     width: usize,
     height: usize,
@@ -36,9 +39,11 @@ impl IndexMut<(usize, usize)> for Map {
     }
 }
 impl Map {
+    // Build a new map from the given problem input, which is a
+    // string represtation of elevations using characters for
+    // height, and starting and ending locations.
     fn from(input: &str) -> Self {
         let mut map = Self::default();
-
         let mut y = 0;
         for line in input.lines() {
             let mut x = 0;
@@ -59,9 +64,10 @@ impl Map {
             y += 1;
         }
         map.height = y;
-
         map
     }
+    // We use this struct in our pathfinding algorithm as well, so allow
+    // it to be initialized with any usize we want.
     fn val(val: usize) -> Self {
         Self { data: [val; MAX_GRID_ROW * MAX_GRID_ROW], ..Default::default() }
     }
@@ -70,15 +76,13 @@ impl Map {
 // Pathfinding.
 impl Map {
 
-    fn count_path<'a>(&self, came_from: &'a HashMap<(usize, usize), (usize, usize)>, mut current: &'a (usize, usize)) -> usize {
-        let mut count = 0;
-        while came_from.contains_key(current) {
-            current = &came_from[current];
-            count += 1;
-        }
-        count
-    }
-
+    // Solve the problem. Count the total number of steps for the
+    // minimum travel path from start to finish. For part 2, a boolean
+    // is passed to decide whether starting position matters.
+    //
+    // Here we use an A* pathfinding algorithm, though since all nodes
+    // are equidistant, this is likely overkill. Could use djykstra or
+    // a simple BFS.
     fn path(&self, use_starting_position: bool) -> usize {
 
         let mut open_set = HashSet::new();
@@ -125,23 +129,38 @@ impl Map {
         return 0;
     }
 
+    // Count up the total number of nodes from start to finish that has the shortest path.
+    // For the sake of this problem, we don't need to know the actual path, but just the
+    // total number of moves.
+    fn count_path<'a>(&self, came_from: &'a HashMap<(usize, usize), (usize, usize)>, mut current: &'a (usize, usize)) -> usize {
+        let mut count = 0;
+        while came_from.contains_key(current) {
+            current = &came_from[current];
+            count += 1;
+        }
+        count
+    }
+
+    // Get the possible neighbors from a given position. This can be
+    // one of the four cardinal directions as long as the neighbor's
+    // elevation isn't more than a single step higher.
     fn neighbors(&self, pos: &(usize, usize)) -> Vec<(usize, usize)> {
         let (x, y) = *pos;
         let mut neighbors = vec![];
 
         // Max elevation allowed
-        let el = self[*pos] + 1;
+        let max = self[*pos] + 1;
 
-        if x > 0 && self[(x - 1, y)] <= el {
+        if x > 0 && self[(x - 1, y)] <= max {
             neighbors.push((x - 1, y));
         }
-        if x < self.width - 1 && self[(x + 1, y)] <= el {
+        if x < self.width - 1 && self[(x + 1, y)] <= max {
             neighbors.push((x + 1, y));
         }
-        if y > 0 && self[(x, y - 1)] <= el {
+        if y > 0 && self[(x, y - 1)] <= max {
             neighbors.push((x, y - 1));
         }
-        if y < self.height - 1 && self[(x, y + 1)] <= el {
+        if y < self.height - 1 && self[(x, y + 1)] <= max {
             neighbors.push((x, y + 1));
         }
 
@@ -149,7 +168,7 @@ impl Map {
     }
 
     // Get node in open set with lowest f_score.
-    // Could use a minheap here instead.
+    // Could use a minheap here instead of traversing the whole list every time.
     fn current(&self, open_set: &HashSet<(usize, usize)>, f_score: &Self) -> (usize, usize) {
         let mut min_f = MAX;
         let mut min_pos = (0, 0);
@@ -162,12 +181,16 @@ impl Map {
         min_pos
     }
 
+    // The heuristic to calculate travel distance remaining.
+    // This is a simple manhatten distance function.
     fn h(&self, pos: (usize, usize)) -> usize {
         let dx = if self.end.0 > pos.0 { self.end.0 - pos.0 } else { pos.0 - self.end.0 };
         let dy = if self.end.1 > pos.1 { self.end.1 - pos.1 } else { pos.1 - self.end.1 };
         dx + dy
     }
 
+    // The cost to move from one position to another.
+    // All adjacent positions are simply one unit apart.
     fn d(&self, _: &(usize, usize), _: &(usize, usize)) -> usize { 1 }
 
 }
