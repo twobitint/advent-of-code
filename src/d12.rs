@@ -1,4 +1,4 @@
-use std::{ops::{Index, IndexMut}, collections::{HashSet, HashMap}, usize::MAX};
+use std::{ops::{Index, IndexMut}, collections::{HashSet, HashMap, BinaryHeap}, usize::MAX};
 
 const MAX_GRID_ROW: usize = 100;
 const START: char = 'S';
@@ -97,13 +97,13 @@ impl Map {
     // a simple BFS.
     fn path(&self, use_starting_position: bool) -> usize {
 
-        let mut open_set = HashSet::new();
+        let mut open_set = BinaryHeap::new();
         let mut came_from: HashMap<(usize, usize), (usize, usize)> = HashMap::new();
         let mut g_score = Map::val(MAX);
         let mut f_score = Map::val(MAX);
 
         if use_starting_position {
-            open_set.insert(self.start);
+            open_set.push(self.start); // insert(self.start);
             g_score[self.start] = 0;
             f_score[self.start] = self.h(self.start);
         } else {
@@ -111,7 +111,7 @@ impl Map {
                 for x in 0..self.width {
                     let pos = (x, y);
                     if self[pos] == START_ELEVATION as usize {
-                        open_set.insert(pos);
+                        open_set.push(pos); // insert(pos);
                         g_score[pos] = 0;
                         f_score[pos] = self.h(pos);
                     }
@@ -120,25 +120,51 @@ impl Map {
         }
         
         while open_set.len() != 0 {
-            let current = self.current(&open_set, &f_score);
+            //let current = self.current(&open_set, &f_score);
+            let current = open_set.pop().unwrap();
             if current == self.end {
                 return self.count_path(&came_from, &current);
             }
 
-            open_set.remove(&current);
+            // open_set.remove(&current);
             for neighbor in self.neighbors(&current) {
                 let tentative_g_score = g_score[current] + self.d(&current, &neighbor);
                 if tentative_g_score < g_score[neighbor] {
                     came_from.insert(neighbor, current);
                     g_score[neighbor] = tentative_g_score;
                     f_score[neighbor] = tentative_g_score + self.h(neighbor);
-                    if !open_set.contains(&neighbor) {
-                        open_set.insert(neighbor);
+                    if !self.open_set_contains(&open_set, &neighbor) {
+                    //if !open_set.contains(&neighbor) {
+                        open_set.push(neighbor); //open_set.insert(neighbor);
+                    //}
                     }
                 }
             }
         }
         return 0;
+    }
+
+    fn open_set_contains(&self, open_set: &BinaryHeap<(usize, usize)>, pos: &(usize, usize)) -> bool {
+        for other in open_set {
+            if other == pos {
+                return true;
+            }
+        }
+        false
+    }
+
+    // Get node in open set with lowest f_score.
+    // Could use a minheap here instead of traversing the whole list every time.
+    fn current(&self, open_set: &HashSet<(usize, usize)>, f_score: &Self) -> (usize, usize) {
+        let mut min_f = MAX;
+        let mut min_pos = (0, 0);
+        for pos in open_set {
+            if f_score[*pos] < min_f {
+                min_f = f_score[*pos];
+                min_pos = *pos;
+            }
+        }
+        min_pos
     }
 
     // Count up the total number of nodes from start to finish that has the shortest path.
@@ -177,20 +203,6 @@ impl Map {
         }
 
         neighbors
-    }
-
-    // Get node in open set with lowest f_score.
-    // Could use a minheap here instead of traversing the whole list every time.
-    fn current(&self, open_set: &HashSet<(usize, usize)>, f_score: &Self) -> (usize, usize) {
-        let mut min_f = MAX;
-        let mut min_pos = (0, 0);
-        for pos in open_set {
-            if f_score[*pos] < min_f {
-                min_f = f_score[*pos];
-                min_pos = *pos;
-            }
-        }
-        min_pos
     }
 
     // The heuristic to calculate travel distance remaining.
