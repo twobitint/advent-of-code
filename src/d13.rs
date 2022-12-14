@@ -29,22 +29,46 @@ struct Packet {
     data: PacketData,
 }
 impl Packet {
+    fn in_order(p1: &PacketData, p2: &PacketData) -> bool {
+        match p1 {
+            PacketData::Number(a) => match p2 {
+                PacketData::Number(b) => { a < b },
+                PacketData::List(b) => {
+                    //let np1 = PacketData::List(vec![PacketData::Number(*a)]);
+                    Self::in_order(&PacketData::List(vec![PacketData::Number(*a)]), p2)
+                }
+            }
+            PacketData::List(a) => match p2 {
+                PacketData::Number(b) => {
+                    Self::in_order(p1, &PacketData::List(vec![PacketData::Number(*b)]))
+                },
+                PacketData::List(b) => {
+                    if b.len() < a.len() {
+                        return false;
+                    }
+                    let mut result = true;
+                    let mut iter = 0;
+                    for item in a {
+                        result = result && Self::in_order(item, b.get(iter).unwrap());
+                        iter += 1;
+                    }
+                    return result;
+                },
+            }
+        }
+    }
+
     fn from(input: &str) -> Self {
         Self { data: Self::data(input) }
     }
     fn data(input: &str) -> PacketData {
-        //println!("{}", input);
         if &input[0..1] != "[" {
-            //println!("{}", input);
             return PacketData::Number((&input[0..input.len()]).parse().unwrap());
         }
-
         let mut iter = 1;
         let mut v = vec![];
         while iter < input.len() {
-            //println!("{}", iter);
             let c = &input[iter..iter+1];
-            //println!("c: {}", c);
             if c == "[" {
                 let mut open_count = 1;
                 let start = iter;
@@ -61,46 +85,34 @@ impl Packet {
             } else if c == "," || c == "]" {
                 iter += 1;
             } else {
-                // println!("iter: {}", iter);
-                // println!("chunk: {}", &input[iter..input.len()]);
                 let end = (&input[iter..input.len()]).find(|s| { s == ',' || s == ']'}).unwrap() + iter;
-                // println!("end: {}", end);
-                // println!("l: {}", &input[iter..end]);
                 v.push(Self::data(&input[iter..end]));
                 iter = end;
             }
         }
         PacketData::List(v)
+    }
+}
+// impl Ord for PacketData {
+//     fn cmp(&self, other: &Self) -> Ordering {
+//         Ordering::Equal
+//         //(self.value, &self.name).cmp(&(other.value, &other.name))
 
-        // PacketData::List(
-        //     input[1..input.len()-1]
-        //         .split(",")
-        //         .fold(vec![], |mut acc, i| {
-        //             acc.push(Self::data(i));
-        //             acc
-        //         })
-        // )
-    }
-}
-impl Ord for PacketData {
-    fn cmp(&self, other: &Self) -> Ordering {
-        Ordering::Equal
-        //(self.value, &self.name).cmp(&(other.value, &other.name))
-    }
-}
-impl PartialOrd for PacketData {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(Ordering::Equal)
-        //self.data.partial_cmp(&other.data)
-    }
-}
-impl PartialEq for PacketData {
-    fn eq(&self, other: &Self) -> bool {
-        true
-        //self.data == other.data
-    }
-}
-impl Eq for PacketData { }
+//     }
+// }
+// impl PartialOrd for PacketData {
+//     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+//         Some(Ordering::Equal)
+//         //self.data.partial_cmp(&other.data)
+//     }
+// }
+// impl PartialEq for PacketData {
+//     fn eq(&self, other: &Self) -> bool {
+//         true
+//         //self.data == other.data
+//     }
+// }
+// impl Eq for PacketData { }
 
 fn p1(input: &str) -> usize {
     let mut sum = 0;
@@ -109,8 +121,12 @@ fn p1(input: &str) -> usize {
         let (p1, p2) = pair.split_once("\n").unwrap();
         let packet1 = Packet::from(p1);
         let packet2 = Packet::from(p2);
-        //println!("{:#?}", packet1);
-        sum += if packet1.data < packet2.data { index } else { 0 };
+
+        let o = Packet::in_order(&packet1.data, &packet2.data);
+        println!("{}", pair);
+        println!("{}", o);
+
+        sum += if Packet::in_order(&packet1.data, &packet2.data) { index } else { 0 };
         index += 1;
     }
     sum
