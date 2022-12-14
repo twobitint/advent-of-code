@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 // Solve the problem!
 pub fn input() -> &'static str { include_str!("../input/13") }
 pub fn solve(input: &str) -> (usize, usize) {
-    (p1(input), 0)
+    (p1(input), p2(input))
 }
 
 // Test the problem!
@@ -14,7 +14,7 @@ pub fn test() {
     let input = test_input();
     let (p1, p2) = solve(input);
     assert_eq!(p1, 13);
-    assert_eq!(p2, 0);
+    assert_eq!(p2, 140);
 }
 
 /* Solution Space Below. */
@@ -27,39 +27,55 @@ enum PacketData {
 #[derive(Debug)]
 struct Packet {
     data: PacketData,
+    divider: bool,
 }
 impl Packet {
-    fn in_order(p1: &PacketData, p2: &PacketData) -> bool {
-        match p1 {
-            PacketData::Number(a) => match p2 {
-                PacketData::Number(b) => { a < b },
-                PacketData::List(b) => {
+    fn in_order(p1: &Vec<PacketData>, p2: &Vec<PacketData>) -> Option<bool> {
+        let mut iter = 0;
+
+        while iter < p1.len() && iter < p2.len() {
+
+            let in_order = match (&p1[iter], &p2[iter]) {
+                (PacketData::Number(a), PacketData::Number(b)) => {
+                    if a < b {
+                        Some(true)
+                    } else if a == b {
+                        None
+                    } else {
+                        Some(false)
+                    }
+                },
+                (PacketData::Number(a), PacketData::List(b)) => {
                     //let np1 = PacketData::List(vec![PacketData::Number(*a)]);
-                    Self::in_order(&PacketData::List(vec![PacketData::Number(*a)]), p2)
+                    Self::in_order(&vec![PacketData::Number(*a)], b)
+                },
+                (PacketData::List(a), PacketData::Number(b)) => {
+                    Self::in_order(a, &vec![PacketData::Number(*b)])
+                },
+                (PacketData::List(a), PacketData::List(b)) => {
+                    Self::in_order(a, b)
                 }
-            }
-            PacketData::List(a) => match p2 {
-                PacketData::Number(b) => {
-                    Self::in_order(p1, &PacketData::List(vec![PacketData::Number(*b)]))
-                },
-                PacketData::List(b) => {
-                    if b.len() < a.len() {
-                        return false;
-                    }
-                    let mut result = true;
-                    let mut iter = 0;
-                    for item in a {
-                        result = result && Self::in_order(item, b.get(iter).unwrap());
-                        iter += 1;
-                    }
-                    return result;
-                },
+            };
+
+            if in_order != None {
+                return in_order;
+            } else {
+                iter += 1;
             }
         }
+
+        if iter < p1.len() {
+            Some(false)
+        } else if iter < p2.len() {
+            Some(true)
+        } else {
+            None
+        }
+
     }
 
     fn from(input: &str) -> Self {
-        Self { data: Self::data(input) }
+        Self { data: Self::data(input), divider: false }
     }
     fn data(input: &str) -> PacketData {
         if &input[0..1] != "[" {
@@ -93,26 +109,6 @@ impl Packet {
         PacketData::List(v)
     }
 }
-// impl Ord for PacketData {
-//     fn cmp(&self, other: &Self) -> Ordering {
-//         Ordering::Equal
-//         //(self.value, &self.name).cmp(&(other.value, &other.name))
-
-//     }
-// }
-// impl PartialOrd for PacketData {
-//     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-//         Some(Ordering::Equal)
-//         //self.data.partial_cmp(&other.data)
-//     }
-// }
-// impl PartialEq for PacketData {
-//     fn eq(&self, other: &Self) -> bool {
-//         true
-//         //self.data == other.data
-//     }
-// }
-// impl Eq for PacketData { }
 
 fn p1(input: &str) -> usize {
     let mut sum = 0;
@@ -122,12 +118,63 @@ fn p1(input: &str) -> usize {
         let packet1 = Packet::from(p1);
         let packet2 = Packet::from(p2);
 
-        let o = Packet::in_order(&packet1.data, &packet2.data);
-        println!("{}", pair);
-        println!("{}", o);
+        let (pv1, pv2) = match (packet1.data, packet2.data) {
+            (PacketData::List(a), PacketData::List(b)) => { (a, b) },
+            _ => { (vec![], vec![]) }
+        };
 
-        sum += if Packet::in_order(&packet1.data, &packet2.data) { index } else { 0 };
+        sum += if Packet::in_order(&pv1, &pv2).unwrap() { index } else { 0 };
         index += 1;
     }
     sum
+}
+
+fn p2(input: &str) -> usize {
+    let mut packets = vec![];
+    for pair in input.split("\n\n") {
+        let (p1, p2) = pair.split_once("\n").unwrap();
+        let packet1 = Packet::from(p1);
+        let packet2 = Packet::from(p2);
+        packets.push(packet1);
+        packets.push(packet2);
+    }
+
+    // Insert dividers.
+    packets.push(Packet {divider: true, data: PacketData::List(vec![PacketData::List(vec![PacketData::Number(2)])]) });
+    packets.push(Packet {divider: true, data: PacketData::List(vec![PacketData::List(vec![PacketData::Number(6)])]) });
+
+    // Sort the packets.
+    packets.sort_by(|a, b| {
+        let mut pv1 = &vec![];
+        let mut pv2 = &vec![];
+        match (&a.data, &b.data) {
+            (PacketData::List(a), PacketData::List(b)) => {
+                pv1 = a;
+                pv2 = b;
+            },
+            _ => {}
+        };
+        match Packet::in_order(pv1, pv2) {
+            None => { Ordering::Equal },
+            Some(v) => { if v { Ordering::Less } else { Ordering::Greater }}
+        }
+    });
+
+    // Find dividers.
+    let mut d1 = 0;
+    let mut d2 = 0;
+    let mut iter = 0;
+    while d1 == 0 || d2 == 0 {
+        if let Some(packet) = packets.get(iter) {
+            if packet.divider {
+                if d1 == 0 {
+                    d1 = iter + 1;
+                } else {
+                    d2 = iter + 1;
+                }
+            }
+        }
+        iter += 1;
+    }
+    d1 * d2
 }
